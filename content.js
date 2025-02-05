@@ -25,12 +25,12 @@ class ProgressiveLoader {
     this.processingDelay = 100;
 
     this.viewportObserver = new IntersectionObserver(
-      (entries) => this.handleIntersection(entries),
-      {
-        root: null,
-        rootMargin: '100px 0px',
-        threshold: 0.1
-      }
+        (entries) => this.handleIntersection(entries),
+        {
+          root: null,
+          rootMargin: '100px 0px',
+          threshold: 0.1
+        }
     );
   }
 
@@ -88,8 +88,21 @@ class ProgressiveLoader {
 }
 
 function isJobPost(post) {
+  // If we're on the jobs page, use class-based detection
+  const jobClasses = [
+    'job-card-container',
+    'jobs-search-results__list-item',
+    'discovery-templates-entity-item'
+  ];
+
+  if (jobClasses.some(cls => post.classList.contains(cls))) {
+    return true;
+  }
+
+  // Fallback to text content check for feed posts
   const text = post.textContent.toLowerCase();
-  return JOB_INDICATORS.some(indicator => text.includes(indicator));
+  const isJob = JOB_INDICATORS.some(indicator => text.includes(indicator));
+  return isJob;
 }
 
 function isJobAllowedForUser(text) {
@@ -110,19 +123,22 @@ function isJobAllowedForUser(text) {
 
   // Check for remote work allowances
   if (showRemote && textLower.includes('remote')) {
+    console.log("Found remote indicator");
     const isAllowed = patterns.allowed.some(location =>
-      textLower.includes(`remote from ${location}`) ||
-      textLower.includes(`${location} remote`) ||
-      textLower.includes(`remote ${location}`) ||
-      textLower.includes(`remote work from ${location}`) ||
-      textLower.includes(`remote position in ${location}`) ||
-      textLower.includes(`${location}-based remote`)
+        textLower.includes(`remote from ${location}`) ||
+        textLower.includes(`${location} remote`) ||
+        textLower.includes(`remote ${location}`) ||
+        textLower.includes(`remote work from ${location}`) ||
+        textLower.includes(`remote position in ${location}`) ||
+        textLower.includes(`${location}-based remote`)
     );
-    if (isAllowed) return true;
+    if (isAllowed) {
+      return true;
+    }
   }
 
   // Check for general location restrictions
-  return !patterns.filter.some(location => {
+  const isFiltered = patterns.filter.some(location => {
     const restrictivePatterns = [
       `\\b${location}\\b`,
       `${location} only`,
@@ -156,8 +172,10 @@ function isJobAllowedForUser(text) {
       `${location} work authorization`
     ];
     const combinedPattern = new RegExp(restrictivePatterns.join('|'), 'i');
-    return combinedPattern.test(text);
+    const matched = combinedPattern.test(text);
+    return matched;
   });
+  return !isFiltered;
 }
 
 function filterPost(postContainer, location) {
