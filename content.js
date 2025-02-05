@@ -121,83 +121,33 @@ function isJobPost(post) {
 
   // Fallback to text content check for feed posts
   const text = post.textContent.toLowerCase();
-  const isJob = JOB_INDICATORS.some(indicator => text.includes(indicator));
-  return isJob;
+  return JOB_INDICATORS.some(indicator => text.includes(indicator));
 }
 
 function isJobAllowedForUser(text) {
   const patterns = LOCATION_PATTERNS[userCountry];
   const textLower = text.toLowerCase();
 
-  // Check for phrases like "based in Europe" etc.
-  for (const phrase of LOCATION_PHRASES) {
-    const index = textLower.indexOf(phrase);
-    if (index !== -1) {
-      // Look at the next few words after the phrase
-      const followingText = textLower.slice(index + phrase.length, index + phrase.length + 50);
-      if (patterns.filter.some(location => followingText.includes(location.toLowerCase()))) {
-        return false;
-      }
-    }
-  }
-
-  // Check for remote work allowances
+  // First check if it's remote and explicitly allows our location
   if (showRemote && textLower.includes('remote')) {
-    const isAllowed = patterns.allowed.some(location =>
-        textLower.includes(`remote from ${location}`) ||
-        textLower.includes(`${location} remote`) ||
-        textLower.includes(`remote ${location}`) ||
-        textLower.includes(`remote work from ${location}`) ||
-        textLower.includes(`remote position in ${location}`) ||
-        textLower.includes(`${location}-based remote`) ||
-        textlower.includes(`${location} (remote)`) ||
-        textLower.includes(`(remote) ${location}`)
+    const isExplicitlyAllowed = patterns.allowed.some(location => {
+      const locationLower = location.toLowerCase();
+      return textLower.includes(`${locationLower} (remote)`) ||
+                     textLower.includes(`remote ${locationLower}`) ||
+                     textLower.includes(`${locationLower} remote`);
+    });
 
-    );
-    if (isAllowed) {
+    if (isExplicitlyAllowed) {
       return true;
     }
   }
 
-  // Check for general location restrictions
-  const isFiltered = patterns.filter.some(location => {
-    const restrictivePatterns = [
-      `\\b${location}\\b`,
-      `${location} only`,
-      `${location}( |-)based`,
-      `in ${location}`,
-      `from ${location}`,
-      `within ${location}`,
-      `${location} region`,
-      `${location} area`,
-      `${location} location`,
-      `position in ${location}`,
-      `in ${location}`,
-      `remote within ${location}`,
-      `role in ${location}`,
-      `located in ${location}`,
-      `working in ${location}`,
-      `based in ${location}`,
-      `work in ${location}`,
-      `based in ${location}`,
-      `located in ${location}`,
-      `relocate to ${location}`,
-      `must be in ${location}`,
-      `must live in ${location}`,
-      `must reside in ${location}`,
-      `${location} office`,
-      `${location} timezone`,
-      `${location} working hours`,
-      `authorized to work in ${location}`,
-      `right to work in ${location}`,
-      `valid work permit in ${location}`,
-      `${location} work authorization`
-    ];
-    const combinedPattern = new RegExp(restrictivePatterns.join('|'), 'i');
-    const matched = combinedPattern.test(text);
-    return matched;
+  // Then check if it mentions any filtered locations
+  const foundFilteredLocation = patterns.filter.some(location => {
+    return textLower.includes(location.toLowerCase());
   });
-  return !isFiltered;
+
+  return !foundFilteredLocation;
 }
 
 function filterPost(postContainer, location) {

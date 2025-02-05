@@ -1,60 +1,124 @@
+// Location groups for reuse
+const US_LOCATIONS = [
+  'united states', 'usa', 'us',
+  'california', ', ca', 'new york', ', ny', 'texas', ', tx', 'florida', ', fl',
+  'san francisco', 'los angeles', 'seattle', ', wa', 'boston', ', ma',
+  'chicago', ', il', 'austin', 'portland', ', or', 'denver', ', co',
+  'atlanta', ', ga', 'miami', 'washington dc', ', dc', 'philadelphia', ', pa',
+  'houston', 'phoenix', ', az', 'dallas'
+];
+
+const CANADA_LOCATIONS = [
+  'canada', 'canadian', 'vancouver', 'toronto', 'montreal', 'calgary', 'ottawa',
+  'british columbia', 'ontario', 'quebec', 'alberta', 'manitoba'
+];
+
+const UK_LOCATIONS = [
+  'uk', 'united kingdom', 'london', 'manchester', 'birmingham', 'leeds', 'glasgow',
+  'england', 'scotland', 'wales', 'northern ireland', 'british'
+];
+
+const AU_LOCATIONS = ['australia', 'australian', 'sydney', 'melbourne'];
+
+const NZ_LOCATIONS = ['new zealand', 'nz', 'wellington', 'auckland'];
+
+const EU_LOCATIONS = ['european union', 'eu', 'europe'];
+
+const LATAM_LOCATIONS = [
+  'latin america', 'latam', 'brazil', 'brasil', 'argentina', 'mexico', 'méxico',
+  'chile', 'colombia', 'peru', 'perú', 'uruguay', 'paraguay', 'bolivia',
+  'venezuela', 'ecuador', 'panama', 'costa rica', 'guatemala', 'el salvador',
+  'honduras', 'nicaragua', 'dominican republic', 'república dominicana'
+];
+
 const CONSTANTS = {
   LOCATION_PATTERNS: {
     US: {
       name: 'United States',
       allowed: ['united states', 'usa', 'us', 'u.s.', 'u.s.a.', 'american'],
       filter: [
-        'canada', 'canadian', 'vancouver', 'toronto', 'montreal', 'calgary', 'ottawa',
-        'british columbia', 'ontario', 'quebec', 'alberta', 'manitoba',
-        'uk', 'united kingdom', 'london', 'manchester', 'birmingham', 'leeds', 'glasgow',
-        'england', 'scotland', 'wales', 'northern ireland', 'british',
-        'australia', 'australian', 'sydney', 'melbourne',
-        'new zealand', 'wellington', 'auckland',
-        'european union', 'eu', 'europe',
+        ...CANADA_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...NZ_LOCATIONS,
+        ...EU_LOCATIONS,
         'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
       ]
     },
     CA: {
       name: 'Canada',
       allowed: ['canada', 'canadian'],
-      filter: ['united states', 'usa', 'us', 'uk', 'united kingdom', 'australia', 'new zealand', 'european union',
-               'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru']
+      filter: [
+        ...US_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...NZ_LOCATIONS,
+        ...EU_LOCATIONS,
+        'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
+      ]
     },
     UK: {
       name: 'United Kingdom',
       allowed: ['uk', 'united kingdom', 'england', 'scotland', 'wales', 'northern ireland', 'british'],
-      filter: ['canada', 'united states', 'usa', 'australia', 'new zealand', 'european union',
-               'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru']
+      filter: [
+        ...US_LOCATIONS,
+        ...CANADA_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...NZ_LOCATIONS,
+        ...EU_LOCATIONS,
+        'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
+      ]
     },
     AU: {
       name: 'Australia',
       allowed: ['australia', 'australian'],
-      filter: ['canada', 'united states', 'usa', 'uk', 'united kingdom', 'new zealand', 'european union',
-               'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru']
+      filter: [
+        ...US_LOCATIONS,
+        ...CANADA_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...NZ_LOCATIONS,
+        ...EU_LOCATIONS,
+        'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
+      ]
     },
     NZ: {
       name: 'New Zealand',
       allowed: ['new zealand', 'nz'],
-      filter: ['canada', 'united states', 'usa', 'uk', 'united kingdom', 'australia', 'european union',
-               'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru']
+      filter: [
+        ...US_LOCATIONS,
+        ...CANADA_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...EU_LOCATIONS,
+        'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
+      ]
     },
     EU: {
       name: 'European Union',
       allowed: ['european union', 'eu', 'europe'],
-      filter: ['canada', 'united states', 'usa', 'uk', 'united kingdom', 'australia', 'new zealand',
-               'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru']
+      filter: [
+        ...US_LOCATIONS,
+        ...CANADA_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...NZ_LOCATIONS,
+        'brazil', 'argentina', 'mexico', 'chile', 'colombia', 'peru'
+      ]
     },
     LATAM: {
       name: 'Latin America',
-      allowed: [
-        'latin america', 'latam', 'brazil', 'brasil', 'argentina', 'mexico', 'méxico',
-        'chile', 'colombia', 'peru', 'perú', 'uruguay', 'paraguay', 'bolivia',
-        'venezuela', 'ecuador', 'panama', 'costa rica', 'guatemala', 'el salvador',
-        'honduras', 'nicaragua', 'dominican republic', 'república dominicana'
-      ],
-      filter: ['canada', 'united states', 'usa', 'uk', 'united kingdom', 'australia', 'new zealand', 'european union']
+      allowed: [...LATAM_LOCATIONS],
+      filter: [
+        ...US_LOCATIONS,
+        ...CANADA_LOCATIONS,
+        ...UK_LOCATIONS,
+        ...AU_LOCATIONS,
+        ...NZ_LOCATIONS,
+        ...EU_LOCATIONS
+      ]
     }
   },
+
   LOCATION_PHRASES: [
     'based in',
     'located in',
@@ -120,4 +184,5 @@ const CONSTANTS = {
     '.artdeco-entity-lockup__content',
     '.job-card-container__metadata-wrapper',
     '.job-card-container__footer-wrapper'
-]};
+  ]
+};
