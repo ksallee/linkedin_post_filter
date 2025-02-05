@@ -128,26 +128,50 @@ function isJobAllowedForUser(text) {
   const patterns = LOCATION_PATTERNS[userCountry];
   const textLower = text.toLowerCase();
 
-  // First check if it's remote and explicitly allows our location
-  if (showRemote && textLower.includes('remote')) {
-    const isExplicitlyAllowed = patterns.allowed.some(location => {
-      const locationLower = location.toLowerCase();
-      return textLower.includes(`${locationLower} (remote)`) ||
-                     textLower.includes(`remote ${locationLower}`) ||
-                     textLower.includes(`${locationLower} remote`);
-    });
-
-    if (isExplicitlyAllowed) {
-      return true;
-    }
-  }
-
-  // Then check if it mentions any filtered locations
+  // First check for filtered locations, as these should block even if remote
   const foundFilteredLocation = patterns.filter.some(location => {
-    return textLower.includes(location.toLowerCase());
+    const locationLower = location.toLowerCase();
+    // For state codes, be more strict
+    if (locationLower.length === 2) {
+      return new RegExp(`\\b${locationLower}\\b`, 'i').test(text) ||
+                     new RegExp(`, ${locationLower}\\b`, 'i').test(text);
+    }
+    // For full location names
+    return textLower.includes(locationLower);
   });
 
-  return !foundFilteredLocation;
+  if (foundFilteredLocation) {
+    // Even if it's remote, if it mentions a filtered location specifically, don't allow
+    // Unless it explicitly allows our location
+    if (showRemote && textLower.includes('remote')) {
+      const isExplicitlyAllowed = patterns.allowed.some(location => {
+        const locationLower = location.toLowerCase();
+        return textLower.includes(`${locationLower} (remote)`) ||
+                       textLower.includes(`remote ${locationLower}`) ||
+                       textLower.includes(`${locationLower} remote`);
+      });
+
+      if (isExplicitlyAllowed) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // If no filtered locations found, check if it's in allowed locations
+  const hasAllowedLocation = patterns.allowed.some(location => {
+    const locationLower = location.toLowerCase();
+    return textLower.includes(locationLower);
+  });
+
+  if (hasAllowedLocation) {
+    return true;
+  }
+
+  // If it's remote and doesn't mention any locations, allow it
+  return showRemote && textLower.includes('remote') &&
+      !textLower.match(/\b(in|at|from)\s+[^,\n\r]+\b/i);
 }
 
 function filterPost(postContainer, location) {

@@ -1,11 +1,11 @@
 // Location groups for reuse
 const US_LOCATIONS = [
   'united states', 'usa', 'us',
-  'california', ', ca', 'new york', ', ny', 'texas', ', tx', 'florida', ', fl',
-  'san francisco', 'los angeles', 'seattle', ', wa', 'boston', ', ma',
-  'chicago', ', il', 'austin', 'portland', ', or', 'denver', ', co',
-  'atlanta', ', ga', 'miami', 'washington dc', ', dc', 'philadelphia', ', pa',
-  'houston', 'phoenix', ', az', 'dallas'
+  'california', 'new york', 'texas', 'florida',
+  'san francisco', 'los angeles', 'seattle', 'boston',
+  'chicago', 'austin', 'portland', 'denver',
+  'atlanta', 'miami', 'washington dc', 'philadelphia',
+  'houston', 'phoenix', 'dallas'
 ];
 
 const CANADA_LOCATIONS = [
