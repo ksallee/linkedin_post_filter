@@ -24,18 +24,33 @@ class ProgressiveLoader {
     this.batchSize = 5;
     this.processingDelay = 100;
 
+    // Add debug counter
+    this.processCount = new Map();
+
     this.viewportObserver = new IntersectionObserver(
-        (entries) => this.handleIntersection(entries),
-        {
-          root: null,
-          rootMargin: '100px 0px',
-          threshold: 0.1
-        }
+      (entries) => this.handleIntersection(entries),
+      {
+        root: null,
+        rootMargin: '100px 0px',
+        threshold: 0.1
+      }
     );
   }
 
   addToQueue(post) {
-    if (this.processedPosts.has(post)) return;
+    // Debug logging
+    if (!this.processCount.has(post)) {
+      this.processCount.set(post, 0);
+    }
+    this.processCount.set(post, this.processCount.get(post) + 1);
+
+    if (this.processCount.get(post) > 1) {
+      return;
+    }
+
+    if (this.processedPosts.has(post)) {
+      return;
+    }
 
     this.queue.push(post);
     this.processedPosts.add(post);
@@ -88,6 +103,11 @@ class ProgressiveLoader {
 }
 
 function isJobPost(post) {
+  // First check if we're inside an already filtered container
+  if (post.closest('[data-filtered]')) {
+    return false;
+  }
+
   // If we're on the jobs page, use class-based detection
   const jobClasses = [
     'job-card-container',
@@ -123,14 +143,16 @@ function isJobAllowedForUser(text) {
 
   // Check for remote work allowances
   if (showRemote && textLower.includes('remote')) {
-    console.log("Found remote indicator");
     const isAllowed = patterns.allowed.some(location =>
         textLower.includes(`remote from ${location}`) ||
         textLower.includes(`${location} remote`) ||
         textLower.includes(`remote ${location}`) ||
         textLower.includes(`remote work from ${location}`) ||
         textLower.includes(`remote position in ${location}`) ||
-        textLower.includes(`${location}-based remote`)
+        textLower.includes(`${location}-based remote`) ||
+        textlower.includes(`${location} (remote)`) ||
+        textLower.includes(`(remote) ${location}`)
+
     );
     if (isAllowed) {
       return true;
@@ -179,13 +201,33 @@ function isJobAllowedForUser(text) {
 }
 
 function filterPost(postContainer, location) {
-  if (postContainer.hasAttribute('data-filtered')) return;
+  // Check if this post or any of its ancestors are already filtered
+  if (postContainer.hasAttribute('data-filtered') || postContainer.closest('[data-filtered]')) {
+    return;
+  }
 
   // Set up the container
   postContainer.style.position = 'relative';
   postContainer.setAttribute('data-filtered', 'true');
 
-  // Create our warning banner
+  // Create overlay FIRST and add it immediately with blur already applied
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1;
+    pointer-events: none;
+  `;
+  overlay.setAttribute('data-content-overlay', 'true');
+  postContainer.appendChild(overlay);
+
+  // Create banner and add it AFTER overlay is in place
   const banner = document.createElement('div');
   banner.style.cssText = `
     position: absolute;
@@ -198,75 +240,49 @@ function filterPost(postContainer, location) {
     text-align: center;
     z-index: 2;
     font-size: 14px;
-    transition: all 0.3s ease-in-out;
+    cursor: pointer;
     pointer-events: auto;
   `;
   banner.textContent = `Position not available in ${LOCATION_PATTERNS[location].name} - Click to show`;
   banner.setAttribute('data-filter-banner', 'true');
-
-  // Add banner at the top
   postContainer.insertBefore(banner, postContainer.firstChild);
-
-  // Create a single overlay for the entire job card
-  const overlay = document.createElement('div');
-  overlay.style.cssText = `
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    transition: all 0.3s ease-in-out;
-    z-index: 1;
-    pointer-events: none;
-  `;
-  overlay.setAttribute('data-content-overlay', 'true');
-
-  // Add the overlay
-  postContainer.appendChild(overlay);
 
   // Handle hover effects
   const handleEnter = () => {
     if (postContainer.hasAttribute('data-filtered')) {
+      overlay.style.background = 'rgba(255, 255, 255, 0.5)';
       overlay.style.backdropFilter = 'blur(2px)';
       overlay.style.webkitBackdropFilter = 'blur(2px)';
-      overlay.style.background = 'rgba(255, 255, 255, 0.5)';
     }
   };
 
   const handleLeave = () => {
     if (postContainer.hasAttribute('data-filtered')) {
+      overlay.style.background = 'rgba(255, 255, 255, 0.8)';
       overlay.style.backdropFilter = 'blur(4px)';
       overlay.style.webkitBackdropFilter = 'blur(4px)';
-      overlay.style.background = 'rgba(255, 255, 255, 0.8)';
     }
   };
 
   postContainer.addEventListener('mouseenter', handleEnter);
   postContainer.addEventListener('mouseleave', handleLeave);
 
-  // Handle click to show
-  banner.addEventListener('click', (e) => {
+  // Direct click handler that removes everything immediately
+  function removeFilter(e) {
+    e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
 
-    requestAnimationFrame(() => {
-      overlay.style.opacity = '0';
-      banner.style.transform = 'translateY(-100%)';
-      banner.style.opacity = '0';
+    overlay.remove();
+    banner.remove();
+    postContainer.style.position = '';
+    postContainer.removeEventListener('mouseenter', handleEnter);
+    postContainer.removeEventListener('mouseleave', handleLeave);
+    postContainer.removeAttribute('data-filtered');
+    postContainer.setAttribute('data-user-cleared', 'true');
+  }
 
-      setTimeout(() => {
-        overlay.remove();
-        banner.remove();
-        postContainer.style.position = '';
-        postContainer.removeEventListener('mouseenter', handleEnter);
-        postContainer.removeEventListener('mouseleave', handleLeave);
-        postContainer.removeAttribute('data-filtered');
-        postContainer.setAttribute('data-user-cleared', 'true');
-      }, 300);
-    });
-  });
+  banner.addEventListener('click', removeFilter, true);
 }
 
 // Listen for settings changes from popup
